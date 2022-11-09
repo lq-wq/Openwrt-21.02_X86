@@ -18,3 +18,6 @@ sed -i 's/PATCHVER:=5.10/PATCHVER:=5.4/g' target/linux/x86/Makefile
 
 # 增加个性名字
 sed -i "s/OpenWrt /${Author} compiled in $(TZ=UTC-8 date "+%Y.%m.%d") @ OpenWrt /g" "${ZZZ_PATH}"
+
+# 修改默认主题
+sed -i "s/bootstrap/argon/ig" feeds/luci/collections/luci/Makefile
