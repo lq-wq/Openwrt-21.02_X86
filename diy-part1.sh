@@ -23,3 +23,15 @@ svn co https://github.com/kiddin9/openwrt-bypass/trunk/luci-app-bypass package/l
 
 # 修改 bypass 依赖
 sed -i 's/luci-lib-ipkg/luci-base/g' package/luci-app-bypass/Makefile
+
+# 整理固件包删除不要的固件或者文件,不上传到Actions空间
+cat >"$CLEAR_PATH" <<-EOF
+packages
+config.buildinfo
+feeds.buildinfo
+openwrt-x86-64-generic-kernel.bin
+openwrt-x86-64-generic.manifest
+openwrt-x86-64-generic-squashfs-rootfs.img.gz
+sha256sums
+version.buildinfo
+EOF
