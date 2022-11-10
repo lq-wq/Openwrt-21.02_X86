@@ -20,7 +20,7 @@ echo 'src-git Packages https://github.com/lq-wq/Packages' >>feeds.conf.default
 
 #添加插件
 svn co https://github.com/kiddin9/openwrt-bypass/trunk/luci-app-bypass package/luci-app-bypass
-https://github.com/shidahuilang/luci-app-autoupdate
+svn co https://github.com/shidahuilang/luci-app-autoupdate package/luci-app-autoupdate
 
 # 修改 bypass 依赖
 sed -i 's/luci-lib-ipkg/luci-base/g' package/luci-app-bypass/Makefile
