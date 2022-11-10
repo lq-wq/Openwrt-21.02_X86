@@ -21,15 +21,3 @@ sed -i "s/OpenWrt /${Author} compiled in $(TZ=UTC-8 date "+%Y.%m.%d") @ OpenWrt 
 
 # 修改默认主题
 sed -i "s/bootstrap/argon/ig" feeds/luci/collections/luci/Makefile
-
-# 整理固件包（根据编译机型变化,自行调整删除的固件名称）
-cat >"$CLEAR_PATH" <<-EOF
-packages
-config.buildinfo
-feeds.buildinfo
-openwrt-x86-64-generic-kernel.bin
-openwrt-x86-64-generic.manifest
-openwrt-x86-64-generic-squashfs-rootfs.img.gz
-sha256sums
-version.buildinfo
-EOF
