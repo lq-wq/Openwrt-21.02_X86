@@ -1,0 +1,131 @@
+#==========================================================================
+# Description: Packaging OpenWrt
+# Copyright (C) 2021 https://github.com/unifreq/openwrt_packit
+# Copyright (C) 2021 https://github.com/ophub/flippy-openwrt-actions
+#==========================================================================
+
+name: Packaging OpenWrt
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      openwrt_soc:
+        description: "Select Amlogic SoC."
+        required: false
+        default: "all"
+        type: choice
+        options:
+          - all
+          - beikeyun_l1pro_r66s_r68s_h68k_e25
+          - s922x_s922x-n2_s905x3_s905x2_s912_s905d_s905
+          - vplus
+          - beikeyun
+          - l1pro
+          - r66s
+          - r68s
+          - h68k
+          - e25
+          - s922x
+          - s922x-n2
+          - s905x3
+          - s905x2
+          - s912
+          - s905d
+          - s905
+          - qemu
+          - diy
+      openwrt_kernel:
+        description: "Select kernel version"
+        required: false
+        default: "5.15.50_6.0.1"
+        type: choice
+        options:
+          - 5.4.210_5.10.135_5.15.50
+          - 5.4.210_5.10.135
+          - 5.10.135_5.15.50
+          - 5.15.50_6.0.1
+          - 5.4.210
+          - 5.10.135
+          - 5.15.50
+          - 6.0.1
+      auto_kernel:
+        description: "Auto use the latest kernel"
+        required: false
+        default: true
+        type: boolean
+
+env:
+  TZ: America/New_York
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    if: ${{ github.event.repository.owner.id }} == ${{ github.event.sender.id }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Initialization environment
+        id: init
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          docker rmi `docker images -q`
+          sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d /usr/local/lib/android 2>/dev/null
+          sudo -E apt-get -y purge azure-cli ghc* zulu* hhvm llvm* firefox google* dotnet* powershell openjdk* adoptopenjdk* mysql* php* mongodb* dotnet* moby* snapd* || true
+          sudo -E apt-get -qq update
+          sudo -E apt-get -qq install $(curl -fsSL https://is.gd/depend_ubuntu2204_openwrt)
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo timedatectl set-timezone "${TZ}"
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Download armvirt file
+        id: download
+        if: ${{ steps.init.outputs.status }} == 'success' && !cancelled()
+        run: |
+          # Custom repository and Releases keywords for *rootfs.tar.gz file
+          armvirt_rootfsfile_repo="ophub/amlogic-s9xxx-openwrt"
+          releases_tag_keywords="OpenWrt_.*lede.*/.*rootfs.tar.gz"
+          #
+          # The following download paths, etc. can remain unchanged
+          save_rootfsfile_path="openwrt/bin/targets/armvirt/64"
+          [[ -d "${save_rootfsfile_path}" ]] || mkdir -p ${save_rootfsfile_path}
+          #
+          # Get the *rootfs.tar.gz file download address
+          openwrt_url="$(curl -s "https://api.github.com/repos/${armvirt_rootfsfile_repo}/releases" | grep -o "${releases_tag_keywords}" | head -n 1)"
+          [[ -z "${openwrt_url}" ]] && echo -e "OpenWrt file not found!" && exit 1
+          #
+          # Download the *rootfs.tar.gz file to the specified directory
+          wget -q -P "${save_rootfsfile_path}" "https://github.com/${armvirt_rootfsfile_repo}/releases/download/${openwrt_url}"
+          [[ "${?}" -ne "0" ]] && echo -e "The armvirt file download failed!" && exit 1
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Package OpenWrt Firmware
+        uses: ophub/flippy-openwrt-actions@main
+        if: ${{ steps.download.outputs.status }} == 'success' && !cancelled()
+        env:
+          OPENWRT_ARMVIRT: openwrt/bin/targets/*/*/*rootfs.tar.gz
+          PACKAGE_SOC: ${{ github.event.inputs.openwrt_soc }}
+          KERNEL_VERSION_NAME: ${{ github.event.inputs.openwrt_kernel }}
+          KERNEL_AUTO_LATEST: ${{ github.event.inputs.auto_kernel }}
+
+      - name: Upload OpenWrt Firmware to Release
+        uses: ncipollo/release-action@main
+        if: ${{ env.PACKAGED_STATUS }} == 'success' && !cancelled()
+        with:
+          tag: OpenWrt_aarch64_${{ env.PACKAGED_OUTPUTDATE }}
+          artifacts: ${{ env.PACKAGED_OUTPUTPATH }}/*
+          allowUpdates: true
+          token: ${{ secrets.GH_TOKEN }}
+          body: |
+            This is OpenWrt firmware for Armvirt 64
+            * Firmware information
+            Default IP: 192.168.1.1
+            Default username: root
+            Default password: password
+            Default WIFI name: OpenWrt
+            Default WIFI password: none
+            Install to EMMC: Login to OpenWrt → System → Amlogic Service → Install OpenWrt
