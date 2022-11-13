@@ -19,6 +19,9 @@ on:
         required: false
         default: 'false'
 
+  schedule:
+     - cron: 00 22 * * 1
+
 env:
   REPO_URL: https://github.com/Lienol/openwrt
   REPO_BRANCH: 21.02
