@@ -68,4 +68,4 @@ jobs:
         token: ${{ secrets.REPO_TOKEN }}
         allowUpdates: true
         bodyFile: "AutoUpdate_log.txt"
-        artifacts: "openwrt/bin/Firmware/*"
+        artifacts: "openwrt/bin/Firmware/*" 
