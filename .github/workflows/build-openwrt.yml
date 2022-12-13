@@ -24,7 +24,7 @@ on:
 
 env:
   REPO_URL: https://github.com/openwrt/openwrt
-  REPO_BRANCH: 21.03
+  REPO_BRANCH: openwrt-21.03
   FEEDS_CONF: feeds.conf.default
   CONFIG_FILE: x86.config
   DIY_P1_SH: diy-part1.sh
