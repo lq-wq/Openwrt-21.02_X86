@@ -69,3 +69,23 @@ jobs:
         allowUpdates: true
         bodyFile: "AutoUpdate_log.txt"
         artifacts: "openwrt/bin/Firmware/*" 
+    
+    - name: 发送[在线更新固件]至云端2
+      continue-on-error: true
+      if: steps.regular.outcome == 'success' && env.REGULAR_UPDATE == 'true' && env.REPO_TOKEN
+      run: |
+        mkdir -p Github_Tags
+        cd Github_Tags
+        wget -q --no-cookie --no-check-certificate https://api.github.com/repos/${{github.repository}}/releases/tags/AutoUpdate -O Github_Tags
+        
+    - name: 发送[在线更新固件]至云端3
+      continue-on-error: true
+      if: steps.regular.outcome == 'success' && env.REGULAR_UPDATE == 'true' && env.REPO_TOKEN
+      uses: ncipollo/release-action@main
+      with:
+        name: AutoUpdate
+        tag: AutoUpdate
+        token: ${{ secrets.REPO_TOKEN }}
+        allowUpdates: true
+        bodyFile: "AutoUpdate_log.txt"
+        artifacts: "Github_Tags/*" 
